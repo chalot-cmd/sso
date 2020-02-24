@@ -33,8 +33,6 @@ import (
 // CLIENT_SECRET
 //
 // SERVER_PORT
-// SERVER_CLUSTER
-// SERVER_SCHEME
 // SERVER_TIMEOUT_SHUTDOWN
 // SERVER_TIMEOUT_READ
 // SERVER_TIMEOUT_WRITE
@@ -52,6 +50,8 @@ import (
 // UPSTREAM_DEFAULT_TCP_RESET_DEADLINE
 // UPSTREAM_DEFAULT_PROVIDER_SLUG
 // UPSTREAM_CONFIGS_FILE
+// UPSTREAM_SCHEME
+// UPSTREAM_CLUSTER
 //
 // PROVIDER_TYPE
 // PROVIDER_URL_EXTERNAL
@@ -62,8 +62,7 @@ import (
 func DefaultProxyConfig() Configuration {
 	return Configuration{
 		ServerConfig: ServerConfig{
-			Scheme: "https",
-			Port:   4180,
+			Port: 4180,
 			TimeoutConfig: TimeoutConfig{
 				Write:    30 * time.Second,
 				Read:     30 * time.Second,
@@ -92,6 +91,7 @@ func DefaultProxyConfig() Configuration {
 				Timeout:       10 * time.Second,
 				ResetDeadline: 60 * time.Second,
 			},
+			Scheme: "https",
 		},
 		LoggingConfig: LoggingConfig{
 			Enable: true,
@@ -268,7 +268,6 @@ func (cc CookieConfig) Validate() error {
 
 	cookie := &http.Cookie{Name: cc.Name}
 	if cookie.String() == "" {
-		//TODO: do we have to do this?
 		return xerrors.Errorf("invalid cc.name: %q", cc.Name)
 	}
 	return nil
@@ -301,17 +300,16 @@ func (cc ClientConfig) Validate() error {
 
 type ServerConfig struct {
 	Port          int           `mapstructure:"port"`
-	Cluster       string        `mapstructure:"cluster"`
-	Scheme        string        `mapstructure:"scheme"`
 	TimeoutConfig TimeoutConfig `mapstructure:"timeout"`
 }
 
 func (sc ServerConfig) Validate() error {
+	if sc.Port == 0 {
+		return xerrors.New("no server.port configured")
+	}
+
 	if err := sc.TimeoutConfig.Validate(); err != nil {
 		return xerrors.Errorf("invalid server.timeout config: %w", err)
-	}
-	if sc.Cluster == "" {
-		return xerrors.Errorf("no server.cluster configured")
 	}
 	return nil
 }
@@ -369,6 +367,8 @@ type UpstreamConfigs struct {
 	ConfigsFile      string `mapstructure:"config"`
 	testTemplateVars map[string]string
 	upstreamConfigs  []*UpstreamConfig
+	Cluster          string `mapstructure:"cluster"`
+	Scheme           string `mapstructure:"scheme"`
 }
 
 func (uc UpstreamConfigs) Validate() error {
@@ -378,6 +378,10 @@ func (uc UpstreamConfigs) Validate() error {
 			return xerrors.Errorf("invalid upstream.config filepath: %w", err)
 		}
 		r.Close()
+	}
+
+	if uc.Cluster == "" {
+		return xerrors.Errorf("no upstream.config cluster configured")
 	}
 	return nil
 }
@@ -392,6 +396,7 @@ type DefaultConfig struct {
 
 func (dc DefaultConfig) Validate() error {
 	return nil
+	//TODO tests here - timeout and reset deadline?
 }
 
 type EmailConfig struct {
