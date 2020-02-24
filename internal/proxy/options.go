@@ -126,7 +126,7 @@ func SetUpstreamConfigs(uc *UpstreamConfigs, sc SessionConfig, svc ServerConfig)
 			CookieName:            sc.CookieConfig.Name,
 		}
 
-		uc.upstreamConfigs, err = loadServiceConfigs(rawBytes, svc.Cluster, svc.Scheme, templateVars, defaultUpstreamOptionsConfig)
+		uc.upstreamConfigs, err = loadServiceConfigs(rawBytes, uc.Cluster, uc.Scheme, templateVars, defaultUpstreamOptionsConfig)
 		if err != nil {
 			return xerrors.Errorf("error parsing upstream configs file %s", err)
 		}
