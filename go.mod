@@ -12,7 +12,7 @@ require (
 	github.com/micro/go-micro v1.5.0
 	github.com/miscreant/miscreant-go v0.0.0-20181010193435-325cbd69228b
 	github.com/mitchellh/mapstructure v1.1.2
-	github.com/rakyll/statik v0.1.6
+	github.com/rakyll/statik v0.1.7
 	github.com/sirupsen/logrus v1.4.2
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859 // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
