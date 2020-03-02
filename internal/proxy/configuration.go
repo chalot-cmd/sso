@@ -16,7 +16,7 @@ import (
 
 // DefaultProxyCongig specifies all the defaults used to configure sso-proxy
 // All configuration can be set using environment variables. Below is a list of
-// configuration variables vai their environment configuraiton
+// configuration variables via their environment configuraiton
 //
 // SESSION_COOKIE_NAME
 // SESSION_COOKIE_SECRET
@@ -45,7 +45,7 @@ import (
 //
 // UPSTREAM_DEFAULT_EMAIL_DOMAINS
 // UPSTREAM_DEFAULT_EMAIL_ADDRESSES
-// UPSTREAM_DEFAULT_EMAIL_GROUPS
+// UPSTREAM_DEFAULT_GROUPS
 // UPSTREAM_DEFAULT_TIMEOUT
 // UPSTREAM_DEFAULT_TCP_RESET_DEADLINE
 // UPSTREAM_DEFAULT_PROVIDER_SLUG
@@ -363,8 +363,8 @@ func (lc LoggingConfig) Validate() error {
 }
 
 type UpstreamConfigs struct {
-	DefaultConfig    DefaultConfig
-	ConfigsFile      string `mapstructure:"config"`
+	DefaultConfig    DefaultConfig `mapstructure:"default"`
+	ConfigsFile      string        `mapstructure:"config"`
 	testTemplateVars map[string]string
 	upstreamConfigs  []*UpstreamConfig
 	Cluster          string `mapstructure:"cluster"`
