@@ -1,6 +1,11 @@
 package proxy
 
 import (
+	"fmt"
+	"io/ioutil"
+	"net/url"
+	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -76,7 +81,92 @@ func TestSetUpstreamConfigs(t *testing.T) {
 					t.Fatalf("expected server timeout to be reset to match upstream timeout")
 				}
 			}
+		})
+	}
+}
 
+func TestUpstreamConfigsFile(t *testing.T) {
+	testCases := []struct {
+		name            string
+		rawConfig       []byte
+		upstreamConfigs *UpstreamConfigs
+		serverConfig    ServerConfig
+
+		wantConfig *UpstreamConfig
+	}{
+		{
+			name: "upstream configs successfully created from file and config vars, with defaults holding",
+			rawConfig: []byte(`
+- service: bar
+  default:
+    from: bar.{{cluster}}.{{root_domain}}
+    to: bar-internal.{{cluster}}.{{root_domain}}
+    options:
+      reset_deadline: 100ms
+`),
+
+			upstreamConfigs: &UpstreamConfigs{
+				DefaultConfig: DefaultConfig{
+					AllowedGroups: []string{"defaultGroup"},
+					ResetDeadline: time.Duration(5) * time.Second,
+				},
+				Scheme: "https",
+			},
+
+			serverConfig: ServerConfig{
+				TimeoutConfig: &TimeoutConfig{
+					Write: time.Duration(5) * time.Second,
+				},
+			},
+
+			wantConfig: &UpstreamConfig{
+				Service: "bar",
+				// AllowedGroups: default config value should be used
+				AllowedGroups: []string{"defaultGroup"},
+				// ResetDeadline: upstream config value should be used, default ignored
+				ResetDeadline: time.Duration(100) * time.Millisecond,
+				RouteConfig: RouteConfig{
+					From: "bar.sso.test",
+					To:   "bar-internal.sso.test",
+				},
+				Route: &SimpleRoute{
+					FromURL: &url.URL{
+						Scheme: "https",
+						Host:   "bar.sso.test",
+					},
+					ToURL: &url.URL{
+						Scheme: "https",
+						Host:   "bar-internal.sso.test",
+					},
+				},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			os.Setenv("SSO_CONFIG_CLUSTER", "sso")
+			os.Setenv("SSO_CONFIG_ROOT_DOMAIN", "test")
+
+			tempFile, _ := ioutil.TempFile("", "")
+			_, err := tempFile.Write(tc.rawConfig)
+			if err != nil {
+				t.Fatalf("error writing to file")
+			}
+
+			tc.upstreamConfigs.ConfigsFile = tempFile.Name()
+			err = SetUpstreamConfigs(tc.upstreamConfigs, SessionConfig{}, tc.serverConfig)
+			if err != nil {
+				t.Fatalf("unexpected error setting upstream configs: %v", err)
+			}
+
+			gotConfigs := &*tc.upstreamConfigs.upstreamConfigs[0]
+			if !reflect.DeepEqual(gotConfigs, tc.wantConfig) {
+				fmt.Printf("expected config: %+v", *&tc.wantConfig)
+				fmt.Printf("     got config: %+v", gotConfigs)
+				t.Fatalf("expected configs to be equal")
+
+			}
 		})
 	}
 }
