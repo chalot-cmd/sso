@@ -147,15 +147,7 @@ func TestLogRequestMetrics(t *testing.T) {
 			}
 			defer pc.Close()
 
-			opts := NewOptions()
-			opts.StatsdHost = "127.0.0.1"
-			opts.StatsdPort = 8125
-			opts.Validate()
-			if err != nil {
-				t.Fatalf("error while instantiating config options: %v", err.Error())
-			}
-
-			client, err := newStatsdClient(opts)
+			client, err := NewStatsdClient("127.0.0.1", 8125)
 			if err != nil {
 				t.Fatalf("error starting new statsd client: %s", err.Error())
 			}
